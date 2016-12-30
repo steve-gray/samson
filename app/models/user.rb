@@ -26,9 +26,12 @@ class User < ActiveRecord::Base
   validates :external_id, presence: :true, unless: :integration?
 
   scope :search, ->(query) {
-    return self if query.blank?
-    query = ActiveRecord::Base.send(:sanitize_sql_like, query)
-    where("name LIKE ? OR email LIKE ?", "%#{query}%", "%#{query}%")
+    if query.blank?
+      self
+    else
+      query = ActiveRecord::Base.send(:sanitize_sql_like, query)
+      where("name LIKE ? OR email LIKE ?", "%#{query}%", "%#{query}%")
+    end
   }
   scope :with_role, -> (role_id, project_id) {
     joins("LEFT OUTER JOIN user_project_roles ON users.id = user_project_roles.user_id AND user_project_roles.project_id = #{project_id.to_i}"). # rubocop:disable Metrics/LineLength
