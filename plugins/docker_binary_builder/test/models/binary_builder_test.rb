@@ -72,9 +72,8 @@ describe BinaryBuilder do
 
       it 'succeeds when pre build script succeeds' do
         builder.build
-        output.string.gsub(/\[04:05:06\] » .*\n/, '').must_equal [
+        output.string.gsub(/\[04:05:06\] .*\n/, '').must_equal [
           "Running pre build script...\n",
-          "foobar\r\n",
           "Connecting to Docker host with Api version: 1.19 ...\n",
           "### Creating tarfile for Docker build\n",
           "### Running Docker build\n",

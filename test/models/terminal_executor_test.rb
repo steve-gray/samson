@@ -7,25 +7,27 @@ describe TerminalExecutor do
   let(:output) { StringIO.new }
   subject { TerminalExecutor.new(output) }
 
+  before { freeze_time }
+
   describe '#execute!' do
     it 'records stdout' do
       subject.execute!('echo "hi"', 'echo "hello"')
-      output.string.must_equal("hi\r\nhello\r\n")
+      output.string.must_equal("[04:05:06] hi\r\n[04:05:06] hello\r\n")
     end
 
     it 'records stderr' do
       subject.execute!('echo "hi" >&2', 'echo "hello" >&2')
-      output.string.must_equal("hi\r\nhello\r\n")
+      output.string.must_equal("[04:05:06] hi\r\n[04:05:06] hello\r\n")
     end
 
     it 'pretends to be a tty to show progress bars and fancy colors' do
       subject.execute!('ruby -e "puts STDOUT.tty?"')
-      output.string.must_equal("true\r\n")
+      output.string.must_equal("[04:05:06] true\r\n")
     end
 
     it 'stops on failure' do
       subject.execute!('echo "hi"', 'false', 'echo "ho"')
-      output.string.must_equal("hi\r\n")
+      output.string.must_equal("[04:05:06] hi\r\n")
     end
 
     it 'returns error value' do
@@ -66,8 +68,8 @@ describe TerminalExecutor do
     end
 
     it "preserves multibyte characters" do
-      subject.execute!(%(echo "#{"ß" * 400}"))
-      output.string.must_equal("#{"ß" * 400}\r\n")
+      subject.execute!(%(echo "#{"ß" * 60}"))
+      output.string.must_equal("[04:05:06] #{"ß" * 60}\r\n")
     end
 
     it "ignores getpgid failures since they mean the program finished early" do
@@ -102,12 +104,13 @@ describe TerminalExecutor do
 
       it 'records commands' do
         subject.execute!('echo "hi"', 'echo "hell o"')
-        output.string.must_equal(%([04:05:06] » echo "hi"\r\nhi\r\n[04:05:06] » echo "hell o"\r\nhell o\r\n))
+        output.string.must_equal \
+          %([04:05:06] » echo "hi"\r\n[04:05:06] hi\r\n[04:05:06] » echo "hell o"\r\n[04:05:06] hell o\r\n)
       end
 
       it 'does not print subcommands' do
         subject.execute!('sh -c "echo 111"')
-        output.string.must_equal("[04:05:06] » sh -c \"echo 111\"\r\n111\r\n")
+        output.string.must_equal("[04:05:06] » sh -c \"echo 111\"\r\n[04:05:06] 111\r\n")
       end
     end
 
@@ -115,7 +118,7 @@ describe TerminalExecutor do
       def assert_resolves(id)
         secret = create_secret(id)
         subject.execute!(%(echo "secret://#{id.split('/').last}"))
-        output.string.must_equal "#{secret.value}\r\n"
+        output.string.must_equal "[04:05:06] #{secret.value}\r\n"
       end
 
       def refute_resolves(id)
@@ -181,7 +184,7 @@ describe TerminalExecutor do
         subject.execute!("export SECRET='secret://baz'; echo $SECRET")
         # echo prints it, but not the execution
         output.string.must_equal \
-          "[04:05:06] » export SECRET='secret://baz'; echo $SECRET\r\n#{secret.value}\r\n"
+          "[04:05:06] » export SECRET='secret://baz'; echo $SECRET\r\n[04:05:06] #{secret.value}\r\n"
       end
     end
   end

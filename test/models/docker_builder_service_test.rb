@@ -158,7 +158,8 @@ describe DockerBuilderService do
 
       it "executes it" do
         service.send(:before_docker_build, tmp_dir)
-        output.string.must_include "[04:05:06] » echo foo\r\nfoo\r\n[04:05:06] » echo bar\r\nbar\r\n"
+        output.string.must_include \
+          "[04:05:06] » echo foo\r\n[04:05:06] foo\r\n[04:05:06] » echo bar\r\n[04:05:06] bar\r\n"
         output.string.must_include "export CACHE_DIR="
       end
 
@@ -166,7 +167,7 @@ describe DockerBuilderService do
         create_secret "global/#{project.permalink}/global/foo"
         command.update_column(:command, "echo secret://foo")
         service.send(:before_docker_build, tmp_dir)
-        output.string.must_include "[04:05:06] » echo secret://foo\r\nMY-SECRET\r\n"
+        output.string.must_include "[04:05:06] » echo secret://foo\r\n[04:05:06] MY-SECRET\r\n"
       end
 
       it "fails when command fails" do
